@@ -72,12 +72,6 @@ jobs:
 
     permissions:
       contents: read
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -88,20 +82,9 @@ jobs:
           name: dist-artifact
           path: dist/
 
-      - name: cleanup for deployment
-        run: |
-          cp dist/redirect.html index.html
-          cp dist/robots.txt robots.txt
-          echo "Removing unnecessary files for deployment"
-          rm -rf node_modules src test .github LICENSE yarn.lock
-          rm -rf dist/models/*.blend dist/models/d-snooker.gltf dist/models/p8.gltf dist/models/snooker.gltf dist/models/d-snooker.bin dist/models/p8.bin dist/models/snooker.bin
-          du -a * | sort -n
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: "./"
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=billiards --branch=main --commit-dirty=true
